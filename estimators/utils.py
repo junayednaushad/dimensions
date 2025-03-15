@@ -140,13 +140,14 @@ class KNNComputerNoCheck(nn.Module):
 def update_nn(anchor_loader, anchor_start_idx, new_img_loader, new_start_idx, nn_computer):
     anchor_counter = anchor_start_idx
     # ignoring the labels
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     with torch.no_grad():
         for n, (abatch, _) in enumerate(anchor_loader):
-            abatch = abatch.cuda()
+            abatch = abatch.to(device)
 
             new_img_counter = new_start_idx
             for newbatch, _ in new_img_loader:
-                newbatch = newbatch.cuda()
+                newbatch = newbatch.to(device)
 
                 nn_computer(abatch, anchor_counter, newbatch, new_img_counter)
 
@@ -158,8 +159,8 @@ def update_nn(anchor_loader, anchor_start_idx, new_img_loader, new_start_idx, nn
 
             anchor_counter += abatch.size(0)
 
-            #if n % 50 == 0 or n == len(anchor_loader) - 1:
-            #    #print("Finished {} images".format(anchor_counter))
+            # if n % 1 == 0 or n == len(anchor_loader) - 1:
+            #    print("Finished {} images".format(anchor_counter))
 
 
 def create_random_subsets(data_set, subset_size):

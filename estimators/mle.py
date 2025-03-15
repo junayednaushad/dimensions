@@ -27,8 +27,8 @@ def intrinsic_dim_sample_wise_double_mle(k=5, dist=None):
         # trying to catch the bug
         np.save("error_dist.npy", dist)
     assert np.all(dist > 0)
-    d = np.log(dist[:, k - 1: k] / dist[:, 0:k - 1])
-    d = d.sum(axis=1) / (k - 2)
+    d = np.log(dist[:, k - 1: k] / dist[:, 0:k - 1])  # T_k / T_j for j=1..k-1
+    d = d.sum(axis=1) / (k - 2)  # sum_j=1..k-1 log(T_k / T_j) / (k-2)
     inv_mle = d.copy()
 
     d = 1. / d
@@ -112,7 +112,8 @@ def mle(full_dataset, nb_iter=100, random_state=None, k1=10, k2=20, average=Fals
 
     print("Computing the KNNs")
     # compute the KNN with pytorch
-    nn_computer = KNNComputerNoCheck(len(anchor_dataset), K=k2 + 1).cuda()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    nn_computer = KNNComputerNoCheck(len(anchor_dataset), K=k2 + 1).to(device)
 
     anchor_loader = torch.utils.data.DataLoader(anchor_dataset,
                                                 batch_size=args.bsize, shuffle=False,
@@ -168,7 +169,8 @@ def mle_inverse_singlek(full_dataset, k1=10, args=None, anchor_dataset=None):
 
     print("Computing the KNNs")
     # compute the KNN with pytorch
-    nn_computer = KNNComputerNoCheck(len(anchor_dataset), K=k1 + 1).cuda()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    nn_computer = KNNComputerNoCheck(len(anchor_dataset), K=k1 + 1).to(device)
 
     anchor_loader = torch.utils.data.DataLoader(anchor_dataset,
                                                 batch_size=args.bsize, shuffle=False,
@@ -226,7 +228,8 @@ def mle_inverse_singlek_loop(full_dataset, net, k1=5, k2=15, k_step=5, average=F
 
     print("Computing the KNNs")
     # compute the KNN with pytorch
-    nn_computer = KNNComputerNoCheck(len(anchor_dataset), K=k2 + 1).cuda()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    nn_computer = KNNComputerNoCheck(len(anchor_dataset), K=k2 + 1).to(device)
 
     anchor_loader = torch.utils.data.DataLoader(anchor_dataset,
                                                 batch_size=args.bsize, shuffle=False,

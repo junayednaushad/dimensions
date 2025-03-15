@@ -1,3 +1,16 @@
+# datasets
+data/
+shell_scripts/
+slurm_outputs/
+
+# vscode
+.vscode/
+
+# misc files
+._.
+._dataset.py
+._get_dimensions.py
+
 #Project specific
 *.sw*
 samples/*/
