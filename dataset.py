@@ -6,6 +6,20 @@ import numpy as np
 import pickle
 
 
+class EmbeddingDataset(Dataset):
+    def __init__(self, df):
+        self.embeddings = torch.from_numpy(np.vstack(df["embedding"].values))
+        self.labels = torch.from_numpy(df["label"].values)
+
+    def __getitem__(self, idx):
+        embedding = self.embeddings[idx]
+        label = self.labels[idx]
+        return embedding, label
+   
+    def __len__(self):
+        return len(self.embeddings)
+
+
 class HAM10kDataset(Dataset):
     def __init__(self, df, image_dir, transform=None):
         self.df = df

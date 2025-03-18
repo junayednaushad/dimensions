@@ -5,7 +5,7 @@ import torch
 from torchvision import transforms as T
 import random
 import estimators
-from dataset import HAM10kDataset, CIFAR10Dataset
+from dataset import HAM10kDataset, EmbeddingDataset, CIFAR10Dataset
 import argparse
 
 
@@ -20,6 +20,9 @@ if __name__ == "__main__":
     parser.add_argument("--dataset", type=str, default="HAM10k", help="Dataset to use")
     parser.add_argument("--class-wise", default=False, action="store_true",
                         help="Whether to compute class-wise intrinsic dimensionality")
+    parser.add_argument("--embedding-space", default=False, action="store_true",
+                        help="Whether to compute intrinsic dimensionality in the embedding space")
+    parser.add_argument("--embedding-path", default=None, type=str, help="Path to the embeddings")
     parser.add_argument('--k1', default=10, type=int)
     parser.add_argument('--bsize', default=16, type=int, help='batch size')
     parser.add_argument('--n-workers', default=1, type=int)
@@ -41,44 +44,60 @@ if __name__ == "__main__":
     seed = 0
     set_seed(seed)
 
-    if args.dataset == "HAM10k":
-        data_dir = "./data/HAM10k"
-        train_df = pd.read_csv(os.path.join(data_dir, "train_df.csv"))
-        split = np.load(os.path.join(data_dir, "train_val_test_split.npy"), allow_pickle=True).item()
-        train_ids = split["train"]
-        train_df = train_df.loc[train_df['image'].isin(train_ids)]
-        train_image_dir = os.path.join(data_dir, "preprocessed_train_images")
-        transforms = T.Compose([
-              T.Resize((224, 298)),
-              T.ToTensor(),
-              T.Normalize(
-                (0.6523304, 0.62197226, 0.61544853),
-                (0.11362693, 0.16195466, 0.16857147)
-              )
-        ])
+    if args.embedding_space:
+        assert args.embedding_path is not None, "Please provide the path to the embeddings"
+        train_df = np.load(args.embedding_path, allow_pickle=True).item()['train']
         if args.class_wise:
             labels = np.unique(train_df["label"].values)
             for label in labels:
                 label_df = train_df.loc[train_df["label"] == label]
-                dataset = HAM10kDataset(label_df, train_image_dir, transform=transforms)
+                dataset = EmbeddingDataset(label_df)
                 dim, inv_mle_dim = estimators.mle_inverse_singlek(dataset, k1=args.k1, args=args)
                 print(f"Label: {label}\tDim: {dim:.3f}\tInv MLE Dim: {inv_mle_dim:.3f}")
         else:
-            dataset = HAM10kDataset(train_df, train_image_dir, transform=transforms)
+            dataset = EmbeddingDataset(train_df)
             dim, inv_mle_dim = estimators.mle_inverse_singlek(dataset, k1=args.k1, args=args)
             print(f"Dim: {dim:.3f}\tInv MLE Dim: {inv_mle_dim:.3f}")
 
-    elif args.dataset == "CIFAR10":
-        transforms = T.Compose([
-            T.ToTensor(),
-            T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-        ])
-        if args.class_wise:
-            for label in range(10):
-                dataset = CIFAR10Dataset(root="./data", train=True, transform=transforms, class_label=label)
+    else:
+        if args.dataset == "HAM10k":
+            data_dir = "./data/HAM10k"
+            train_df = pd.read_csv(os.path.join(data_dir, "train_df.csv"))
+            split = np.load(os.path.join(data_dir, "train_val_test_split.npy"), allow_pickle=True).item()
+            train_ids = split["train"]
+            train_df = train_df.loc[train_df['image'].isin(train_ids)]
+            train_image_dir = os.path.join(data_dir, "preprocessed_train_images")
+            transforms = T.Compose([
+                T.Resize((224, 298)),
+                T.ToTensor(),
+                T.Normalize(
+                    (0.6523304, 0.62197226, 0.61544853),
+                    (0.11362693, 0.16195466, 0.16857147)
+                )
+            ])
+            if args.class_wise:
+                labels = np.unique(train_df["label"].values)
+                for label in labels:
+                    label_df = train_df.loc[train_df["label"] == label]
+                    dataset = HAM10kDataset(label_df, train_image_dir, transform=transforms)
+                    dim, inv_mle_dim = estimators.mle_inverse_singlek(dataset, k1=args.k1, args=args)
+                    print(f"Label: {label}\tDim: {dim:.3f}\tInv MLE Dim: {inv_mle_dim:.3f}")
+            else:
+                dataset = HAM10kDataset(train_df, train_image_dir, transform=transforms)
                 dim, inv_mle_dim = estimators.mle_inverse_singlek(dataset, k1=args.k1, args=args)
-                print(f"Label: {label}\tDim: {dim:.3f}\tInv MLE Dim: {inv_mle_dim:.3f}")
-        else:
-            dataset = CIFAR10Dataset(root="./data", train=True, transform=transforms)
-            dim, inv_mle_dim = estimators.mle_inverse_singlek(dataset, k1=args.k1, args=args)
-            print(f"Dim: {dim:.3f}\tInv MLE Dim: {inv_mle_dim:.3f}")
+                print(f"Dim: {dim:.3f}\tInv MLE Dim: {inv_mle_dim:.3f}")
+
+        elif args.dataset == "CIFAR10":
+            transforms = T.Compose([
+                T.ToTensor(),
+                T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+            ])
+            if args.class_wise:
+                for label in range(10):
+                    dataset = CIFAR10Dataset(root="./data", train=True, transform=transforms, class_label=label)
+                    dim, inv_mle_dim = estimators.mle_inverse_singlek(dataset, k1=args.k1, args=args)
+                    print(f"Label: {label}\tDim: {dim:.3f}\tInv MLE Dim: {inv_mle_dim:.3f}")
+            else:
+                dataset = CIFAR10Dataset(root="./data", train=True, transform=transforms)
+                dim, inv_mle_dim = estimators.mle_inverse_singlek(dataset, k1=args.k1, args=args)
+                print(f"Dim: {dim:.3f}\tInv MLE Dim: {inv_mle_dim:.3f}")
