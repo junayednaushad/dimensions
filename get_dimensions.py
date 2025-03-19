@@ -46,6 +46,7 @@ if __name__ == "__main__":
 
     if args.embedding_space:
         assert args.embedding_path is not None, "Please provide the path to the embeddings"
+        print("Using embeddings from: {}".format(args.embedding_path))
         train_df = np.load(args.embedding_path, allow_pickle=True).item()['train']
         if args.class_wise:
             labels = np.unique(train_df["label"].values)
