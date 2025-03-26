@@ -20,6 +20,28 @@ class EmbeddingDataset(Dataset):
         return len(self.embeddings)
 
 
+class FitzpatrickDataset(Dataset):
+    def __init__(self, df, label_col, image_dir, transform=None):
+        self.df = df
+        self.labels = df[label_col].values
+        self.image_dir = image_dir
+        self.transform = transform
+
+    def __getitem__(self, idx):
+        image_id = self.df.iloc[idx]
+        image_path = os.path.join(self.image_dir, image_id["md5hash"] + ".png")
+        image = Image.open(image_path)
+
+        if self.transform:
+            image = self.transform(image)
+        label = self.labels[idx]
+
+        return image, torch.tensor(label, dtype=torch.long)
+
+    def __len__(self):
+        return len(self.labels)
+    
+
 class HAM10kDataset(Dataset):
     def __init__(self, df, image_dir, transform=None):
         self.df = df

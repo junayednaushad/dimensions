@@ -3,6 +3,9 @@ data/
 shell_scripts/
 slurm_outputs/
 
+# estimates
+estimates/
+
 # vscode
 .vscode/
 

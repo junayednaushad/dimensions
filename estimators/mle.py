@@ -7,7 +7,6 @@ import torch
 import random
 import numpy as np
 from estimators.utils import KNNComputerNoCheck, update_nn
-from sklearn.neighbors import NearestNeighbors
 
 
 def intrinsic_dim_sample_wise_double_mle(k=5, dist=None):
@@ -27,7 +26,7 @@ def intrinsic_dim_sample_wise_double_mle(k=5, dist=None):
         # trying to catch the bug
         np.save("error_dist.npy", dist)
     assert np.all(dist > 0)
-    d = np.log(dist[:, k - 1: k] / dist[:, 0:k - 1])  # T_k / T_j for j=1..k-1
+    d = np.log(dist[:, k - 1: k] / dist[:, 0:k - 1])  # log(T_k / T_j) for j=1..k-1
     d = d.sum(axis=1) / (k - 2)  # sum_j=1..k-1 log(T_k / T_j) / (k-2)
     inv_mle = d.copy()
 
