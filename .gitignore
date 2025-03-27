@@ -6,6 +6,9 @@ slurm_outputs/
 # estimates
 estimates/
 
+# test accuracies
+class_wise_accuracies/
+
 # vscode
 .vscode/
 
